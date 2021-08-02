@@ -11,9 +11,8 @@ const Room = ({ userObj }) => {
   const [artistName, setArtistName] = useState("");
   const [roomCreator, setRoomCreator] = useState("");
   const [audioSource, setAudioSource] = useState("");
-  const [audioSources, setAudioSources] = useState([]);
-  const [audioSourceUrls, setAudioSourceUrls] = useState([]);
-  const [sessionName, setSessionName] = useState();
+  const [audioSourceObjs, setAudioSourceObjs] = useState([]);
+  const [sessionName, setSessionName] = useState("");
   const getRoomInfo = async () => {
     // firebase에서 roomId를 통해 곡 제목, 아티스트명, 오디오파일 URL 리스트 받아옴
     const roomInfo = await dbService
@@ -23,7 +22,7 @@ const Room = ({ userObj }) => {
     roomInfo.forEach((document) => {
       setSongName(document.data().songName);
       setArtistName(document.data().artistName);
-      setRoomCreator(document.data().creator);
+      setRoomCreator(document.data().roomCreator);
       setDocumentId(document.id);
     });
   };
@@ -37,10 +36,16 @@ const Room = ({ userObj }) => {
       .child(`${userObj.uid}/${uuidv4()}`);
     const response = await audioSourceRef.putString(audioSource, "data_url");
     const audioSourceUrl = await response.ref.getDownloadURL();
+    const audioSourceObj = {
+      creator: userObj.uid,
+      createDate: Date.now(),
+      sessionName,
+      audioSourceUrl,
+    };
     // const audioSourceObj = {}; 오디오 url이 누가 만들었고 세션이 누군가를 그냥 배열로 저장하면 모르기 때문에 객체?
-    setAudioSourceUrls(audioSourceUrls.push(audioSourceUrl)); // TODO: prev 쓰는 코드 알아보기
+    setAudioSourceObjs(audioSourceObjs.push(audioSourceObj)); // TODO: prev 쓰는 코드 알아보기
     await dbService.doc(`rooms/${documentId}`).update({
-      audioSourceUrls: audioSourceUrls,
+      audioSourceObjs: audioSourceObjs,
     });
     setAudioSource(""); // 업로드 후 Home에서 지워지게 함
   };

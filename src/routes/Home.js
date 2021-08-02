@@ -8,10 +8,11 @@ const Home = ({ userObj }) => {
     event.preventDefault();
     await dbService.collection("rooms").add({
       roomId: "ABCD",
-      creator: userObj.uid,
+      roomCreator: userObj.uid,
+      roomCreateDate: Date.now(),
       songName,
       artistName,
-      audioSourceUrls: [],
+      audioSourceObjs: [],
       // TODO: 랜덤 roomId 만들어서 넣기, 방 만들고 submit 해도 입력한거 안없어짐, 리디렉션
       // history.push("/");
     });
