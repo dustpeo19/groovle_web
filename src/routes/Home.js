@@ -1,29 +1,20 @@
 import React, { useState } from "react";
-import { v4 as uuidv4 } from "uuid";
-import { dbService, storageService } from "fb_info";
+import { dbService } from "fb_info";
 
 const Home = ({ userObj }) => {
-  const [audioSource, setAudioSource] = useState();
   const [songName, setSongName] = useState();
   const [artistName, setArtistName] = useState();
-  const [sessionName, setSessionName] = useState();
   const onSubmit = async (event) => {
     event.preventDefault();
-    const audioSourceRef = storageService
-      .ref()
-      .child(`${userObj.uid}/${uuidv4()}`);
-    const response = await audioSourceRef.putString(audioSource, "data_url");
-    const audioSourceUrl = await response.ref.getDownloadURL();
-    console.log(audioSourceUrl);
-    await dbService.collection("audioSource").add({
+    await dbService.collection("rooms").add({
+      roomId: "ABCD",
       creator: userObj.uid,
       songName,
       artistName,
-      sessionName,
-      createDate: Date.now(),
-      audioSourceUrl,
+      audioSourceUrls: [],
+      // TODO: 랜덤 roomId 만들어서 넣기, 방 만들고 submit 해도 입력한거 안없어짐, 리디렉션
+      // history.push("/");
     });
-    setAudioSource(""); // 업로드 후 Home에서 지워지게 함
   };
   const onSongNameChange = (event) => {
     const {
@@ -36,29 +27,6 @@ const Home = ({ userObj }) => {
       target: { value },
     } = event;
     setArtistName(value);
-  };
-  const onSessionNameChange = (event) => {
-    const {
-      target: { value },
-    } = event;
-    setSessionName(value);
-  };
-  const onFileChange = (event) => {
-    const {
-      target: { files },
-    } = event;
-    const file = files[0];
-    const reader = new FileReader();
-    reader.onloadend = (finishedEvent) => {
-      const {
-        target: { result },
-      } = finishedEvent;
-      setAudioSource(result);
-    };
-    reader.readAsDataURL(file);
-  };
-  const onClearAudioSource = () => {
-    setAudioSource(null);
   };
   return (
     <div>
@@ -80,30 +48,8 @@ const Home = ({ userObj }) => {
           />
         </div>
         <div>
-          <input
-            type="text"
-            onChange={onSessionNameChange}
-            placeholder="세션명"
-            required
-          />
+          <input type="submit" value="방 만들기" />
         </div>
-        <div>
-          <input
-            type="file"
-            accept="audio/*"
-            onChange={onFileChange}
-            required
-          />
-        </div>
-        <div>
-          <input type="submit" value="Upload" />
-        </div>
-        {audioSource && (
-          <div>
-            <audio controls src={audioSource} />
-            <button onClick={onClearAudioSource}>Cancel Upload</button>
-          </div>
-        )}
       </form>
     </div>
   );
