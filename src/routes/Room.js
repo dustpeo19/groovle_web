@@ -2,11 +2,13 @@ import React, { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { dbService, storageService } from "fb_info";
 import { useParams } from "react-router-dom";
+import AudioSource from "components/AudioSource";
 
 const Room = ({ userObj }) => {
   // TODO: 방 아이디 생성 코드
   const { roomId } = useParams();
-  const [documentId, setDocumentId] = useState();
+  const [fileUploaded, setFileUploaded] = useState(false);
+  const [documentId, setDocumentId] = useState("");
   const [songName, setSongName] = useState("");
   const [artistName, setArtistName] = useState("");
   const [roomCreator, setRoomCreator] = useState("");
@@ -23,6 +25,7 @@ const Room = ({ userObj }) => {
       setSongName(document.data().songName);
       setArtistName(document.data().artistName);
       setRoomCreator(document.data().roomCreator);
+      setAudioSourceObjs(document.data().audioSourceObjs);
       setDocumentId(document.id);
     });
   };
@@ -42,12 +45,12 @@ const Room = ({ userObj }) => {
       sessionName,
       audioSourceUrl,
     };
-    // const audioSourceObj = {}; 오디오 url이 누가 만들었고 세션이 누군가를 그냥 배열로 저장하면 모르기 때문에 객체?
     setAudioSourceObjs(audioSourceObjs.push(audioSourceObj)); // TODO: prev 쓰는 코드 알아보기
     await dbService.doc(`rooms/${documentId}`).update({
       audioSourceObjs: audioSourceObjs,
     });
     setAudioSource(""); // 업로드 후 Home에서 지워지게 함
+    setFileUploaded(true);
   };
   const onSessionNameChange = (event) => {
     const {
@@ -72,40 +75,50 @@ const Room = ({ userObj }) => {
   const onClearAudioSource = () => {
     setAudioSource(null);
   };
-  //TODO: 업로드폼 내가 업로드 안했을때만 뜨도록 하기(?: 사용)
   return (
     <div>
       <div>
         <h3>{songName}</h3>
-        <p>- {artistName}</p>
+        <p>{artistName}</p>
       </div>
-      <form onSubmit={onSubmit}>
-        <div>
-          <input
-            type="text"
-            onChange={onSessionNameChange}
-            placeholder="세션명"
-            required
-          />
-        </div>
-        <div>
-          <input
-            type="file"
-            accept="audio/*"
-            onChange={onFileChange}
-            required
-          />
-        </div>
-        <div>
-          <input type="submit" value="Upload" />
-        </div>
-        {audioSource && (
+      {!fileUploaded && (
+        // 내 파일 업로드하면 업로드폼 안보이게 하기
+        <form onSubmit={onSubmit}>
           <div>
-            <audio controls src={audioSource} />
-            <button onClick={onClearAudioSource}>Cancel Upload</button>
+            <input
+              type="text"
+              onChange={onSessionNameChange}
+              placeholder="세션명"
+              required
+            />
           </div>
-        )}
-      </form>
+          <div>
+            <input
+              type="file"
+              accept="audio/*"
+              onChange={onFileChange}
+              required
+            />
+          </div>
+          <div>
+            <input type="submit" value="Upload" />
+          </div>
+          {audioSource && (
+            <div>
+              <audio controls src={audioSource} />
+              <button onClick={onClearAudioSource}>Cancel Upload</button>
+            </div>
+          )}
+        </form>
+      )}
+      <div>
+        {audioSourceObjs.map((audioSource) => (
+          <AudioSource
+            key={audioSource.createDate}
+            audioSourceObj={audioSource}
+          />
+        ))}
+      </div>
     </div>
   );
 };
