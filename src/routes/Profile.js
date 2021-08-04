@@ -2,7 +2,7 @@ import { authService } from "fb_info";
 import React from "react";
 import { useHistory } from "react-router-dom";
 
-export default () => {
+const Profile = ({ userObj }) => {
   const history = useHistory();
   const onLogOutClick = () => {
     authService.signOut();
@@ -14,3 +14,5 @@ export default () => {
     </>
   );
 };
+
+export default Profile;

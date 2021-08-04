@@ -13,10 +13,11 @@ const Room = ({ userObj }) => {
   const [roomCreator, setRoomCreator] = useState("");
   const [audioSource, setAudioSource] = useState("");
   const [audioSourceIds, setAudioSourceIds] = useState([]);
+  const [audioSourceStorageName, setAudioSourceStorageName] = useState("");
   const [sessionName, setSessionName] = useState("");
   const getRoomInfo = async () => {
     // firebase에서 roomId를 통해 곡 제목, 아티스트명, 오디오파일 도큐먼트 아이디 받아옴
-    // TODO: roomId = ""이면 누가 임의로 url 지운것이니 home으로 리디렉션
+    // TODO: roomId = ""이면 누가 임의로 url 지운것이니 home으로 리디렉션 => 찾는 방이 없을 시 리디렉션하면 url 없는것과 틀린것 모두 포함 가능
     const roomInfo = await dbService
       .collection("rooms")
       .where("roomId", "==", roomId)
@@ -34,6 +35,7 @@ const Room = ({ userObj }) => {
   });
   const onSubmit = async (event) => {
     event.preventDefault();
+    // TODO: storage의 파일 이름을 알아야 삭제를 하는데 알아올 방법이 없음
     const audioSourceRef = storageService
       .ref()
       .child(`${userObj.uid}/${uuidv4()}`);
@@ -44,13 +46,17 @@ const Room = ({ userObj }) => {
       createDate: Date.now(),
       sessionName,
       audioSourceUrl,
+      audioSourceStorageName,
+      belongingRoomDocumentId: roomDocumentId,
+      belongingRoomSongName: songName,
+      belongingRoomArtistName: artistName,
     });
     audioSourceIds.push(audioSourceDocId.id);
     setAudioSourceIds(audioSourceIds); // TODO: prev 쓰는 코드 알아보기
     await dbService.doc(`rooms/${roomDocumentId}`).update({
       audioSourceIds,
     });
-    setAudioSource(""); // 업로드 후 Home에서 지워지게 함
+    setAudioSource(""); // 업로드 후 room에서 지워지게 함
   };
   const onSessionNameChange = (event) => {
     const {
@@ -98,12 +104,11 @@ const Room = ({ userObj }) => {
             required
           />
         </div>
-        <div>
-          <input type="submit" value="Upload" />
-        </div>
         {audioSource && (
           <div>
             <audio controls src={audioSource} />
+            <br />
+            <input type="submit" value="Upload" />
             <button onClick={onClearAudioSource}>Cancel Upload</button>
           </div>
         )}
@@ -115,9 +120,13 @@ const Room = ({ userObj }) => {
                 key={audioSourceId}
                 audioSourceId={audioSourceId}
                 userObj={userObj}
+                callingPage="Room"
               />
             ))
           : "업로드된 파일이 없습니다."}
+      </div>
+      <div>
+        <button>합성</button>
       </div>
     </div>
   );

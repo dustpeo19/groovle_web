@@ -1,11 +1,21 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { dbService } from "fb_info";
-import { Redirect } from "react-router-dom";
+import { Link, Redirect } from "react-router-dom";
 
 const Home = ({ userObj }) => {
   const [songName, setSongName] = useState("");
   const [artistName, setArtistName] = useState("");
   const [roomId, setRoomId] = useState("");
+  const [rooms, setRooms] = useState([]);
+  const getRooms = async () => {
+    const dbRooms = await dbService.collection("rooms").get();
+    dbRooms.forEach((document) => {
+      setRooms((prev) => [document.data(), ...prev]);
+    });
+  };
+  useEffect(() => {
+    getRooms();
+  }, []);
   // TODO: 존재하는 방 리스트 쭉 보여주기
   const makeId = () => {
     // TODO: 같은 아이디 가진 방 있을때 어떻게 할지 결정
@@ -67,6 +77,17 @@ const Home = ({ userObj }) => {
             <input type="submit" value="방 만들기" />
           </div>
         </form>
+        <div>
+          {rooms.map((room) => (
+            <Link to={"/room/" + room.roomId} key={room.roomCreateDate}>
+              <div>
+                <h3>{room.songName}</h3>
+                <p>{room.artistName}</p>
+                <hr />
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
       {roomId ? <Redirect push to={"/room/" + roomId} /> : null}
     </>
