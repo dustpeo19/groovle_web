@@ -6,6 +6,7 @@ const Home = ({ userObj }) => {
   const [songName, setSongName] = useState("");
   const [artistName, setArtistName] = useState("");
   const [roomId, setRoomId] = useState("");
+  // TODO: 존재하는 방 리스트 쭉 보여주기
   const makeId = () => {
     // TODO: 같은 아이디 가진 방 있을때 어떻게 할지 결정
     const possible =
@@ -24,9 +25,7 @@ const Home = ({ userObj }) => {
       roomCreateDate: Date.now(),
       songName,
       artistName,
-      audioSourceObjs: [],
-      // TODO: 방 만들고 submit 해도 입력한거 안없어짐, 리디렉션
-      // history.push("/");
+      audioSourceIds: [],
     });
     setSongName("");
     setArtistName("");

@@ -7,16 +7,16 @@ import AudioSource from "components/AudioSource";
 const Room = ({ userObj }) => {
   // TODO: 방 아이디 생성 코드
   const { roomId } = useParams();
-  const [fileUploaded, setFileUploaded] = useState(false);
-  const [documentId, setDocumentId] = useState("");
+  const [roomDocumentId, setRoomDocumentId] = useState("");
   const [songName, setSongName] = useState("");
   const [artistName, setArtistName] = useState("");
   const [roomCreator, setRoomCreator] = useState("");
   const [audioSource, setAudioSource] = useState("");
-  const [audioSourceObjs, setAudioSourceObjs] = useState([]);
+  const [audioSourceIds, setAudioSourceIds] = useState([]);
   const [sessionName, setSessionName] = useState("");
   const getRoomInfo = async () => {
-    // firebase에서 roomId를 통해 곡 제목, 아티스트명, 오디오파일 URL 리스트 받아옴
+    // firebase에서 roomId를 통해 곡 제목, 아티스트명, 오디오파일 도큐먼트 아이디 받아옴
+    // TODO: roomId = ""이면 누가 임의로 url 지운것이니 home으로 리디렉션
     const roomInfo = await dbService
       .collection("rooms")
       .where("roomId", "==", roomId)
@@ -25,8 +25,8 @@ const Room = ({ userObj }) => {
       setSongName(document.data().songName);
       setArtistName(document.data().artistName);
       setRoomCreator(document.data().roomCreator);
-      setAudioSourceObjs(document.data().audioSourceObjs);
-      setDocumentId(document.id);
+      setAudioSourceIds(document.data().audioSourceIds);
+      setRoomDocumentId(document.id);
     });
   };
   useEffect(() => {
@@ -39,18 +39,18 @@ const Room = ({ userObj }) => {
       .child(`${userObj.uid}/${uuidv4()}`);
     const response = await audioSourceRef.putString(audioSource, "data_url");
     const audioSourceUrl = await response.ref.getDownloadURL();
-    const audioSourceObj = {
+    const audioSourceDocId = await dbService.collection("audioSources").add({
       creator: userObj.uid,
       createDate: Date.now(),
       sessionName,
       audioSourceUrl,
-    };
-    setAudioSourceObjs(audioSourceObjs.push(audioSourceObj)); // TODO: prev 쓰는 코드 알아보기
-    await dbService.doc(`rooms/${documentId}`).update({
-      audioSourceObjs: audioSourceObjs,
+    });
+    audioSourceIds.push(audioSourceDocId.id);
+    setAudioSourceIds(audioSourceIds); // TODO: prev 쓰는 코드 알아보기
+    await dbService.doc(`rooms/${roomDocumentId}`).update({
+      audioSourceIds,
     });
     setAudioSource(""); // 업로드 후 Home에서 지워지게 함
-    setFileUploaded(true);
   };
   const onSessionNameChange = (event) => {
     const {
@@ -81,43 +81,43 @@ const Room = ({ userObj }) => {
         <h3>{songName}</h3>
         <p>{artistName}</p>
       </div>
-      {!fileUploaded && (
-        // 내 파일 업로드하면 업로드폼 안보이게 하기
-        <form onSubmit={onSubmit}>
-          <div>
-            <input
-              type="text"
-              onChange={onSessionNameChange}
-              placeholder="세션명"
-              required
-            />
-          </div>
-          <div>
-            <input
-              type="file"
-              accept="audio/*"
-              onChange={onFileChange}
-              required
-            />
-          </div>
-          <div>
-            <input type="submit" value="Upload" />
-          </div>
-          {audioSource && (
-            <div>
-              <audio controls src={audioSource} />
-              <button onClick={onClearAudioSource}>Cancel Upload</button>
-            </div>
-          )}
-        </form>
-      )}
-      <div>
-        {audioSourceObjs.map((audioSource) => (
-          <AudioSource
-            key={audioSource.createDate}
-            audioSourceObj={audioSource}
+      <form onSubmit={onSubmit}>
+        <div>
+          <input
+            type="text"
+            onChange={onSessionNameChange}
+            placeholder="세션명"
+            required
           />
-        ))}
+        </div>
+        <div>
+          <input
+            type="file"
+            accept="audio/*"
+            onChange={onFileChange}
+            required
+          />
+        </div>
+        <div>
+          <input type="submit" value="Upload" />
+        </div>
+        {audioSource && (
+          <div>
+            <audio controls src={audioSource} />
+            <button onClick={onClearAudioSource}>Cancel Upload</button>
+          </div>
+        )}
+      </form>
+      <div>
+        {audioSourceIds
+          ? audioSourceIds.map((audioSourceId) => (
+              <AudioSource
+                key={audioSourceId}
+                audioSourceId={audioSourceId}
+                userObj={userObj}
+              />
+            ))
+          : "업로드된 파일이 없습니다."}
       </div>
     </div>
   );
