@@ -6,11 +6,11 @@ import moment from "moment";
 const AudioSource = ({ audioSourceId, userObj, callingPage }) => {
   const [mounted, setMounted] = useState(false); // 새 파일 submit 하면 unmount 오류 발생. 이를 해결 위한 state임. 실제 이게 해결방법인지는 찾아봐야함.
   const [audioSourceDocumentId, setAudioSourceDocumentId] = useState("");
-  const [creator, setCreator] = useState("");
+  const [creatorId, setCreatorId] = useState("");
+  const [creatorDisplayName, setCreatorDisplayName] = useState("");
   const [createDate, setCreateDate] = useState();
   const [sessionName, setSessionName] = useState("");
   const [audioSourceUrl, setAudioSourceUrl] = useState("");
-  const [audioSourceStorageName, setAudioSourceStorageName] = useState("");
   const [belongingRoomDocumentId, setBelongingRoomDocumentId] = useState("");
   const [belongingRoomSongName, setBelongingRoomSongName] = useState("");
   const [belongingRoomArtistName, setBelongingRoomArtistName] = useState("");
@@ -22,14 +22,14 @@ const AudioSource = ({ audioSourceId, userObj, callingPage }) => {
       .get()
       .then((document) => {
         setAudioSourceDocumentId(document.id);
-        setCreator(document.data().creator);
+        setCreatorId(document.data().creatorId);
+        setCreatorDisplayName(document.data().creatorDisplayName);
         setCreateDate(document.data().createDate);
         setSessionName(document.data().sessionName);
         setAudioSourceUrl(document.data().audioSourceUrl);
         setBelongingRoomDocumentId(document.data().belongingRoomDocumentId);
         setBelongingRoomSongName(document.data().belongingRoomSongName);
         setBelongingRoomArtistName(document.data().belongingRoomArtistName);
-        setAudioSourceStorageName(document.data().audioSourceStorageName);
       });
   };
   useEffect(() => {
@@ -40,7 +40,7 @@ const AudioSource = ({ audioSourceId, userObj, callingPage }) => {
     return () => {
       setMounted(false);
     };
-  }, [mounted, getAudioSourceInfo]);
+  });
   const formatCreateDate = () => {
     const formatted = moment(createDate).format(
       "YYYY년 MM월 DD일 hh시 mm분 ss초"
@@ -70,15 +70,8 @@ const AudioSource = ({ audioSourceId, userObj, callingPage }) => {
       });
       // audioSource 컬렉션에서 삭제
       await dbService.doc(`audioSources/${audioSourceDocumentId}`).delete();
-      // TODO: storage에서 삭제하는 코드 제대로 안됨.
-      const audioSourceRef = storageService
-        .ref()
-        .child(`${userObj.uid}/${audioSourceStorageName}`);
-      await audioSourceRef.delete();
-      // .then(() => {})
-      // .catch((error) => {
-      //   console.log(error);
-      // });
+      // storage에서 삭제
+      await storageService.refFromURL(audioSourceUrl).delete();
     }
   };
   return (
@@ -89,11 +82,15 @@ const AudioSource = ({ audioSourceId, userObj, callingPage }) => {
           <p>아티스트명: {belongingRoomArtistName}</p>
         </div>
       )}
-      <p>파일 업로드한 사람: {creator}</p>
+      {callingPage === "Room" && (
+        <p>파일 업로드한 사람: {creatorDisplayName}</p>
+      )}
       <p>파일 업로드 일시: {formatCreateDate()}</p>
       <p>세션명: {sessionName}</p>
       <audio controls src={audioSourceUrl} />
-      {userObj.uid === creator && <button onClick={onDeleteClick}>삭제</button>}
+      {userObj.uid === creatorId && (
+        <button onClick={onDeleteClick}>삭제</button>
+      )}
     </div>
   );
 };

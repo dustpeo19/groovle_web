@@ -8,14 +8,14 @@ const Home = ({ userObj }) => {
   const [artistName, setArtistName] = useState("");
   // const [roomId, setRoomId] = useState("");
   const [rooms, setRooms] = useState([]);
-  const getRooms = async () => {
-    const dbRooms = await dbService.collection("rooms").get();
-    dbRooms.forEach((document) => {
-      setRooms((prev) => [document.data(), ...prev]);
-    });
-  };
   useEffect(() => {
-    getRooms();
+    // snapshot으로 room 정보 가져와서 useState에 저장
+    dbService.collection("rooms").onSnapshot((snapshot) => {
+      const roomArray = snapshot.docs.map((doc) => ({
+        ...doc.data(),
+      }));
+      setRooms(roomArray);
+    });
   }, []);
   const makeId = () => {
     // TODO: 같은 아이디 가진 방 있을때 어떻게 할지 결정
@@ -31,7 +31,8 @@ const Home = ({ userObj }) => {
     const roomIdCreated = makeId();
     await dbService.collection("rooms").add({
       roomId: roomIdCreated,
-      roomCreator: userObj.uid,
+      roomCreatorId: userObj.uid,
+      roomCreatorDisplayName: userObj.displayName,
       roomCreateDate: Date.now(),
       songName,
       artistName,
@@ -84,6 +85,7 @@ const Home = ({ userObj }) => {
               <div>
                 <h3>{room.songName}</h3>
                 <p>{room.artistName}</p>
+                <p>방 주인: {room.roomCreatorDisplayName}</p>
                 <hr />
               </div>
             </Link>

@@ -10,7 +10,8 @@ const Room = ({ userObj }) => {
   const [roomDocumentId, setRoomDocumentId] = useState("");
   const [songName, setSongName] = useState("");
   const [artistName, setArtistName] = useState("");
-  const [roomCreator, setRoomCreator] = useState("");
+  const [roomCreatorId, setRoomCreatorId] = useState("");
+  const [roomCreatorDisplayName, setRoomCreatorDisplayName] = useState("");
   const [audioSource, setAudioSource] = useState("");
   const [audioSourceIds, setAudioSourceIds] = useState([]);
   // const [audioSourceStorageName, setAudioSourceStorageName] = useState("");
@@ -25,7 +26,8 @@ const Room = ({ userObj }) => {
     roomInfo.forEach((document) => {
       setSongName(document.data().songName);
       setArtistName(document.data().artistName);
-      setRoomCreator(document.data().roomCreator);
+      setRoomCreatorId(document.data().roomCreatorId);
+      setRoomCreatorDisplayName(document.data().roomCreatorDisplayName);
       setAudioSourceIds(document.data().audioSourceIds);
       setRoomDocumentId(document.id);
     });
@@ -36,20 +38,20 @@ const Room = ({ userObj }) => {
   const onSubmit = async (event) => {
     event.preventDefault();
     // TODO: storage의 파일 이름을 알아야 삭제를 하는데 알아올 방법이 없음
-    const storageName = uuidv4();
     const audioSourceRef = storageService
       .ref()
-      .child(`${userObj.uid}/${storageName}`);
+      .child(`${userObj.uid}/${uuidv4()}`);
     // setAudioSourceStorageName(storageName);
     const response = await audioSourceRef.putString(audioSource, "data_url");
     const audioSourceUrl = await response.ref.getDownloadURL();
     const audioSourceDocId = await dbService.collection("audioSources").add({
-      creator: userObj.uid,
+      creatorId: userObj.uid,
+      creatorDisplayName: userObj.displayName,
       createDate: Date.now(),
       sessionName,
       audioSourceUrl,
-      audioSourceStorageName: storageName,
       belongingRoomDocumentId: roomDocumentId,
+      belongingRoomId: roomId,
       belongingRoomSongName: songName,
       belongingRoomArtistName: artistName,
     });
@@ -88,7 +90,8 @@ const Room = ({ userObj }) => {
       <div>
         <h3>{songName}</h3>
         <p>{artistName}</p>
-        <p>방 주인: {roomCreator}</p>
+        <p>방 주인: {roomCreatorDisplayName}</p>
+        {userObj.uid === roomCreatorId && <button>방 삭제</button>}
       </div>
       <form onSubmit={onSubmit}>
         {!audioSource && (

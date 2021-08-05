@@ -4,6 +4,7 @@ import React, { useState } from "react";
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [nickname, setNickname] = useState("");
   const [newAccount, setNewAccount] = useState("");
   const [error, setError] = useState("");
   const onChange = (event) => {
@@ -14,6 +15,8 @@ const Auth = () => {
       setEmail(value);
     } else if (name === "password") {
       setPassword(value);
+    } else if (name === "nickname") {
+      setNickname(value);
     }
   };
   const onSubmit = async (event) => {
@@ -21,7 +24,14 @@ const Auth = () => {
     try {
       if (newAccount) {
         // create account
-        await authService.createUserWithEmailAndPassword(email, password);
+        await authService
+          .createUserWithEmailAndPassword(email, password)
+          .then((userCredential) => {
+            const user = userCredential.user;
+            user.updateProfile({
+              displayName: nickname,
+            });
+          });
       } else {
         // log in
         await authService.signInWithEmailAndPassword(email, password);
@@ -42,6 +52,7 @@ const Auth = () => {
           value={email}
           onChange={onChange}
         />
+        <br />
         <input
           name="password"
           type="password"
@@ -50,7 +61,22 @@ const Auth = () => {
           value={password}
           onChange={onChange}
         />
+        <br />
+        {newAccount && (
+          <>
+            <input
+              name="nickname"
+              type="text"
+              placeholder="nickname"
+              required
+              value={nickname}
+              onChange={onChange}
+            />
+            <br />
+          </>
+        )}
         <input type="submit" value={newAccount ? "Create Account" : "Log In"} />
+        <br />
         {error}
       </form>
       <span onClick={toggleAccount}>
