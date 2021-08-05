@@ -85,13 +85,28 @@ const Room = ({ userObj }) => {
   const onClearAudioSource = () => {
     setAudioSource(null);
   };
+  const onRoomDeleteClick = async () => {
+    const ok = window.confirm(
+      "방에 업로드된 모든 파일이 삭제됩니다. 정말 삭제하시겠습니까?"
+    );
+    // if (ok) {
+    //   audioSourceIds.forEach(id => {
+    //     // audioSource 컬렉션에서 삭제
+    //     await dbService.doc(`audioSources/${id}`).delete();
+    //   // storage에서 삭제
+    //     await storageService.refFromURL(audioSourceUrl).delete();
+    //   })
+    // }
+  };
   return (
     <div>
       <div>
         <h3>{songName}</h3>
         <p>{artistName}</p>
         <p>방 주인: {roomCreatorDisplayName}</p>
-        {userObj.uid === roomCreatorId && <button>방 삭제</button>}
+        {userObj.uid === roomCreatorId && (
+          <button onClick={onRoomDeleteClick}>방 삭제</button>
+        )}
       </div>
       <form onSubmit={onSubmit}>
         {!audioSource && (
