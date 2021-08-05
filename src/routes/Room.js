@@ -13,7 +13,7 @@ const Room = ({ userObj }) => {
   const [roomCreator, setRoomCreator] = useState("");
   const [audioSource, setAudioSource] = useState("");
   const [audioSourceIds, setAudioSourceIds] = useState([]);
-  const [audioSourceStorageName, setAudioSourceStorageName] = useState("");
+  // const [audioSourceStorageName, setAudioSourceStorageName] = useState("");
   const [sessionName, setSessionName] = useState("");
   const getRoomInfo = async () => {
     // firebase에서 roomId를 통해 곡 제목, 아티스트명, 오디오파일 도큐먼트 아이디 받아옴
@@ -36,9 +36,11 @@ const Room = ({ userObj }) => {
   const onSubmit = async (event) => {
     event.preventDefault();
     // TODO: storage의 파일 이름을 알아야 삭제를 하는데 알아올 방법이 없음
+    const storageName = uuidv4();
     const audioSourceRef = storageService
       .ref()
-      .child(`${userObj.uid}/${uuidv4()}`);
+      .child(`${userObj.uid}/${storageName}`);
+    // setAudioSourceStorageName(storageName);
     const response = await audioSourceRef.putString(audioSource, "data_url");
     const audioSourceUrl = await response.ref.getDownloadURL();
     const audioSourceDocId = await dbService.collection("audioSources").add({
@@ -46,7 +48,7 @@ const Room = ({ userObj }) => {
       createDate: Date.now(),
       sessionName,
       audioSourceUrl,
-      audioSourceStorageName,
+      audioSourceStorageName: storageName,
       belongingRoomDocumentId: roomDocumentId,
       belongingRoomSongName: songName,
       belongingRoomArtistName: artistName,
@@ -86,26 +88,32 @@ const Room = ({ userObj }) => {
       <div>
         <h3>{songName}</h3>
         <p>{artistName}</p>
+        <p>방 주인: {roomCreator}</p>
       </div>
       <form onSubmit={onSubmit}>
-        <div>
-          <input
-            type="text"
-            onChange={onSessionNameChange}
-            placeholder="세션명"
-            required
-          />
-        </div>
-        <div>
-          <input
-            type="file"
-            accept="audio/*"
-            onChange={onFileChange}
-            required
-          />
-        </div>
+        {!audioSource && (
+          <>
+            <div>
+              <input
+                type="text"
+                onChange={onSessionNameChange}
+                placeholder="세션명"
+                required
+              />
+            </div>
+            <div>
+              <input
+                type="file"
+                accept="audio/*"
+                onChange={onFileChange}
+                required
+              />
+            </div>
+          </>
+        )}
         {audioSource && (
           <div>
+            <p>{sessionName}</p>
             <audio controls src={audioSource} />
             <br />
             <input type="submit" value="Upload" />

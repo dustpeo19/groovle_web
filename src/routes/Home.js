@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { dbService } from "fb_info";
-import { Link, Redirect } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 
 const Home = ({ userObj }) => {
+  const history = useHistory();
   const [songName, setSongName] = useState("");
   const [artistName, setArtistName] = useState("");
-  const [roomId, setRoomId] = useState("");
+  // const [roomId, setRoomId] = useState("");
   const [rooms, setRooms] = useState([]);
   const getRooms = async () => {
     const dbRooms = await dbService.collection("rooms").get();
@@ -16,7 +17,6 @@ const Home = ({ userObj }) => {
   useEffect(() => {
     getRooms();
   }, []);
-  // TODO: 존재하는 방 리스트 쭉 보여주기
   const makeId = () => {
     // TODO: 같은 아이디 가진 방 있을때 어떻게 할지 결정
     const possible =
@@ -39,7 +39,8 @@ const Home = ({ userObj }) => {
     });
     setSongName("");
     setArtistName("");
-    setRoomId(roomIdCreated);
+    // setRoomId(roomIdCreated);
+    history.push("/room/" + roomIdCreated);
   };
   const onChange = (event) => {
     const {
@@ -89,7 +90,6 @@ const Home = ({ userObj }) => {
           ))}
         </div>
       </div>
-      {roomId ? <Redirect push to={"/room/" + roomId} /> : null}
     </>
   );
 };

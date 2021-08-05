@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { dbService, storageService } from "fb_info";
+import moment from "moment";
 
 //creator 닉네임 받기 or userObj 받기
 const AudioSource = ({ audioSourceId, userObj, callingPage }) => {
@@ -39,35 +40,58 @@ const AudioSource = ({ audioSourceId, userObj, callingPage }) => {
     return () => {
       setMounted(false);
     };
-  });
+  }, [mounted, getAudioSourceInfo]);
+  const formatCreateDate = () => {
+    const formatted = moment(createDate).format(
+      "YYYY년 MM월 DD일 hh시 mm분 ss초"
+    );
+    return formatted;
+  };
+  const getBelongingRoomInfo = async () => {
+    let ids;
+    await dbService
+      .collection("rooms")
+      .doc(belongingRoomDocumentId)
+      .get()
+      .then((document) => {
+        // setBelongingRoomAudioSourceIds(document.data().audioSourceIds); 이 코드로 useState 사용하려 했지만 실패
+        ids = document.data().audioSourceIds;
+      });
+    return ids;
+  };
   const onDeleteClick = async () => {
     const ok = window.confirm("정말 삭제하시겠습니까?");
     if (ok) {
-      // TODO: room의 audioSourceIds 배열에서도 삭제해야 함
+      // room의 audioSourceIds 배열에서 삭제
+      const ids = await getBelongingRoomInfo();
+      ids.splice(ids.indexOf(audioSourceDocumentId), 1);
+      await dbService.doc(`rooms/${belongingRoomDocumentId}`).update({
+        audioSourceIds: ids,
+      });
+      // audioSource 컬렉션에서 삭제
       await dbService.doc(`audioSources/${audioSourceDocumentId}`).delete();
-      // TODO: storage에서도 삭제하는 코드 제대로 안됨. 지금 문제는 room에서 audioSourceIds에서 해당 항목을 삭제 안해서 생기는 듯
+      // TODO: storage에서 삭제하는 코드 제대로 안됨.
       const audioSourceRef = storageService
         .ref()
         .child(`${userObj.uid}/${audioSourceStorageName}`);
-      await audioSourceRef
-        .delete()
-        .then(() => {})
-        .catch((error) => {
-          console.log(error);
-        });
+      await audioSourceRef.delete();
+      // .then(() => {})
+      // .catch((error) => {
+      //   console.log(error);
+      // });
     }
   };
   return (
     <div>
       {callingPage === "Profile" && (
         <div>
-          <p>{"곡명: " + belongingRoomSongName}</p>
-          <p>{"아티스트명: " + belongingRoomArtistName}</p>
+          <p>곡명: {belongingRoomSongName}</p>
+          <p>아티스트명: {belongingRoomArtistName}</p>
         </div>
       )}
-      <p>{"파일 업로드한 사람: " + creator}</p>
-      <p>{"파일 업로드 일시: " + createDate}</p>
-      <p>{"세션명 :" + sessionName}</p>
+      <p>파일 업로드한 사람: {creator}</p>
+      <p>파일 업로드 일시: {formatCreateDate()}</p>
+      <p>세션명: {sessionName}</p>
       <audio controls src={audioSourceUrl} />
       {userObj.uid === creator && <button onClick={onDeleteClick}>삭제</button>}
     </div>
